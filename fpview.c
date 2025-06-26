@@ -113,15 +113,15 @@ int main(int argc, char *argv[]) {
                 digits[i] = (uint8_t)(overlap.bytes >> i) & 0b1;
             }
             char buffer[FLT_DIG + 3];
-            bool exact = false;
+            bool storable = false;
             int len = sprintf(buffer, "%.*f", FLT_DIG, overlap.number);
             if (len > 0 && len <= FLT_DIG + 2) {
                 float new = strtof(argv[i], &end);
                 if (!(new == 0.0 && end == buffer)) {
-                    exact = new == overlap.number;
+                    storable = new == overlap.number;
                 }
             }
-            printf("%.*f (%s)/ %a / "COLOR_SIGN"%c"COLOR_NONE"1."COLOR_FRACTION, FLT_DIG, overlap.number, exact ? "exact" : "non-exact", overlap.number, digits[SINGLE_OFF_SIGN] ? '-' : '+');
+            printf("%.*f (%s)/ %a / "COLOR_SIGN"%c"COLOR_NONE"1."COLOR_FRACTION, FLT_DIG, overlap.number, storable ? "storable" : "non-storable", overlap.number, digits[SINGLE_OFF_SIGN] ? '-' : '+');
             for (short i = SINGLE_OFF_FRACTION_HIGH; i >= SINGLE_OFF_FRACTION_LOW; --i) {
                 printf("%hhu", digits[i]);
             }
@@ -157,15 +157,15 @@ int main(int argc, char *argv[]) {
                 digits[i] = (uint8_t)(overlap.bytes >> i) & 0b1;
             }
             char buffer[DBL_DIG + 3];
-            bool exact = false;
+            bool storable = false;
             int len = sprintf(buffer, "%.*lf", DBL_DIG, overlap.number);
             if (len > 0 && len <= DBL_DIG + 2) {
                 float new = strtod(argv[i], &end);
                 if (!(new == 0.0 && end == buffer)) {
-                    exact = new == overlap.number;
+                    storable = new == overlap.number;
                 }
             }
-            printf("%.*lf (%s) / %a / "COLOR_SIGN"%c"COLOR_NONE"1."COLOR_FRACTION"", DBL_DIG, overlap.number, exact ? "exact" : "non-exact", overlap.number, digits[DOUBLE_OFF_SIGN] ? '-' : '+');
+            printf("%.*lf (%s) / %a / "COLOR_SIGN"%c"COLOR_NONE"1."COLOR_FRACTION"", DBL_DIG, overlap.number, storable ? "storable" : "non-storable", overlap.number, digits[DOUBLE_OFF_SIGN] ? '-' : '+');
             for (short i = DOUBLE_OFF_FRACTION_HIGH; i >= DOUBLE_OFF_FRACTION_LOW; --i) {
                 printf("%hhu", digits[i]);
             }
