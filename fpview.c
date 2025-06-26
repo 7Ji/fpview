@@ -112,10 +112,10 @@ int main(int argc, char *argv[]) {
             for (short i = 0; i < 32; ++i) {
                 digits[i] = (uint8_t)(overlap.bytes >> i) & 0b1;
             }
-            char buffer[FLT_DIG + 3];
+            char buffer[FLT_DIG + 4];
             bool storable = false;
             int len = sprintf(buffer, "%.*f", FLT_DIG, overlap.number);
-            if (len > 0 && len <= FLT_DIG + 2) {
+            if (len > 0 && len <= FLT_DIG + 3) {
                 float new = strtof(argv[i], &end);
                 if (!(new == 0.0 && end == buffer)) {
                     storable = new == overlap.number;
@@ -156,10 +156,10 @@ int main(int argc, char *argv[]) {
             for (short i = 0; i < 64; ++i) {
                 digits[i] = (uint8_t)(overlap.bytes >> i) & 0b1;
             }
-            char buffer[DBL_DIG + 3];
+            char buffer[DBL_DIG + 4];
             bool storable = false;
             int len = sprintf(buffer, "%.*lf", DBL_DIG, overlap.number);
-            if (len > 0 && len <= DBL_DIG + 2) {
+            if (len > 0 && len <= DBL_DIG + 3) {
                 float new = strtod(argv[i], &end);
                 if (!(new == 0.0 && end == buffer)) {
                     storable = new == overlap.number;
