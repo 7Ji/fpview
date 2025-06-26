@@ -54,22 +54,43 @@ int main(int argc, char *argv[]) {
     while ((c = getopt_long(argc, argv, "hfsdb", long_options, &option_index)) != -1) {
         switch (c) {
         case 'h':
-            puts("Not written yet");
+            puts(
+                "fpview by 7Ji, a bitwise viewer of IEEE754 floating number on terminal\n"
+                "\n"
+                "  fpview (-s/--single) (-f/--float) (-d/--double) (-b/--both) (--) [number 1] ([number 2] (...))\n"
+                "\n"
+                "  -h/--help\tprint this help message\n"
+                "  -s/--single\tshow only single-precision bitwise view\n"
+                "  -f/--float\talis to -s/--single\n"
+                "  -d/--double\tshow only double-precision bitwise view\n"
+                "  -b/--both\tshow both single-precision and double-precision bitwise views (default)\n"
+                "\n"
+                "Hint: due to the nature of argument parsing, you might want to add -- before all numbers\n"
+                "\n"
+                "E.g.:\n"
+                "  To get bitwise views of single-precision fp numbers 1.0 and 2.0:\n"
+                "    fpview --single 1.0 2.0\n"
+                "  To get bitwise views of double-precision fp numbers -0.1 and -0.2:\n"
+                "    fpview --double -- 0.1 0.2\n"
+                "  To get bitwise views of both single-precision and double-precision fp numbers 1.234 -2.3441 5.61323 -10.2323:\n"
+                "    fpview -- 1.234 -2.3441 5.61323 -10.2323"
+            );
             return 0;
         case 'f':
-            format = FloatingFormatSingle;
-            break;
         case 's':
+            puts("> Specified -f/--float/-s/--single, would only show single-precision view");
             format = FloatingFormatSingle;
             break;
         case 'd':
+            puts("> Specified -d/--double, would only show double-precision view");
             format = FloatingFormatDouble;
             break;
         case 'b':
+            puts("> Specified -b/--both, would show both single-precision and double-precision view");
             format = FloatingFormatBoth;
             break;
         default:
-            printf("Unknown option '%s'", argv[optind - 1]);
+            printf("Unknown option '%s', maybe try -h or --help", argv[optind - 1]);
             return 1;
         }
     }
