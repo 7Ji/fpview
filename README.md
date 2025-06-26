@@ -2,7 +2,7 @@
 
 This tool shows colored, commented bitwise views of IEEE754 floating numbers, both single-precision and double-precison on terminal.
 
-![demo](res/demo.png)
+![demo](res/demo.png?)
 
 I wrote this as I recently need to deal with a lot of bitwise operation of floating numbers. And I hope this helps you out.
 
