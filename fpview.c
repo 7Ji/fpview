@@ -3,6 +3,38 @@
 #include <stdint.h>
 #include <getopt.h>
 #include <string.h>
+#include <float.h>
+#include <stdbool.h>
+
+#define SINGLE_OFF_FRACTION_LOW      0
+#define SINGLE_OFF_FRACTION_HIGH    22
+#define SINGLE_OFF_EXPONENT_LOW     23
+#define SINGLE_OFF_EXPONENT_HIGH    30
+#define SINGLE_OFF_SIGN             31
+
+#define DOUBLE_OFF_FRACTION_LOW      0
+#define DOUBLE_OFF_FRACTION_HIGH    51
+#define DOUBLE_OFF_EXPONENT_LOW     52
+#define DOUBLE_OFF_EXPONENT_HIGH    62
+#define DOUBLE_OFF_SIGN             63
+
+#define COLOR_PREFIX        "\033["
+#define COLOR_SUFFIX        "m"
+#define COLOR(COLOR_ID)     COLOR_PREFIX COLOR_ID COLOR_SUFFIX
+#define COLOR_NONE          COLOR("0")
+#define COLOR_BLUE          COLOR("34")
+#define COLOR_GREEN         COLOR("32")
+#define COLOR_RED           COLOR("31")
+
+#define COLOR_SIGN          COLOR_BLUE
+#define COLOR_EXPONENT      COLOR_GREEN
+#define COLOR_FRACTION      COLOR_RED
+
+#define TEXT_SEPERATOR "================================================================================================================================================================================================"
+#define TEXT_31_TO_0   "31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0"
+#define TEXT_63_TO_32  "63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32"
+#define TEXT_63_TO_0    TEXT_63_TO_32 " " TEXT_31_TO_0
+
 
 int main(int argc, char *argv[]) {
     struct option const long_options[] = {
@@ -41,10 +73,10 @@ int main(int argc, char *argv[]) {
             return 1;
         }
     }
-    puts("Parts are colored:\n\033[34m sign\033[32m exponent\033[31m fraction\033[0m");
+    puts("Parts are colored:\n"COLOR_SIGN" sign"COLOR_EXPONENT" exponent"COLOR_FRACTION" fraction"COLOR_NONE);
     for (int i = optind; i < argc; ++i) {
         if (format & FloatingFormatSingle) {
-            printf("%s as single-precision:\n", argv[i]);
+            printf(TEXT_SEPERATOR"\n%s as single-precision: ", argv[i]);
             union {
                 float number;
                 uint32_t bytes;
@@ -52,21 +84,43 @@ int main(int argc, char *argv[]) {
             char *end;
             overlap.number = strtof(argv[i], &end);
             if (overlap.number == 0.0 && end == argv[i]) {
-                puts("------ BAD INPUT ------");
+                puts("BAD INPUT");
                 continue;
             }
-            puts("\033[34m 31\033[32m 30 29 28 27 26 25 24 23\033[31m 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0\033[0m");
-            printf("  %hhu", (uint8_t)(overlap.bytes >> 31) & 0b1);
-            for (short i = 30; i >= 23; --i) {
-                printf("  %hhu", (uint8_t)(overlap.bytes >> i) & 0b1);
+            char digits[32];
+            for (short i = 0; i < 32; ++i) {
+                digits[i] = (uint8_t)(overlap.bytes >> i) & 0b1;
             }
-            for (short i = 22; i >= 0; --i) {
-                printf("  %hhu", (uint8_t)(overlap.bytes >> i) & 0b1);
+            char buffer[FLT_DIG + 3];
+            bool exact = false;
+            int len = sprintf(buffer, "%.*f", FLT_DIG, overlap.number);
+            if (len > 0 && len <= FLT_DIG + 2) {
+                float new = strtof(argv[i], &end);
+                if (!(new == 0.0 && end == buffer)) {
+                    exact = new == overlap.number;
+                }
             }
-            printf(" \n");
+            printf("%.*f (%s)/ %a / "COLOR_SIGN"%c"COLOR_NONE"1."COLOR_FRACTION, FLT_DIG, overlap.number, exact ? "exact" : "non-exact", overlap.number, digits[SINGLE_OFF_SIGN] ? '-' : '+');
+            for (short i = SINGLE_OFF_FRACTION_HIGH; i >= SINGLE_OFF_FRACTION_LOW; --i) {
+                printf("%hhu", digits[i]);
+            }
+            printf(COLOR_NONE"e("COLOR_EXPONENT);
+            for (short i = SINGLE_OFF_EXPONENT_HIGH; i >= SINGLE_OFF_EXPONENT_LOW; --i) {
+                printf("%hhu", digits[i]);
+            }
+            uint8_t e = (overlap.bytes >> (SINGLE_OFF_FRACTION_HIGH + 1)) & 0xff;
+            printf(COLOR_NONE"-11111111)_2, "COLOR_EXPONENT"E=%hhu"COLOR_NONE", "COLOR_EXPONENT"exp=%hhd"COLOR_NONE"\n "TEXT_31_TO_0"\n"COLOR_SIGN"  %hhu"COLOR_EXPONENT"", e, (int8_t)(e - 127), digits[SINGLE_OFF_SIGN]);
+            for (short i = SINGLE_OFF_EXPONENT_HIGH; i >= SINGLE_OFF_EXPONENT_LOW; --i) {
+                printf("  %hhu", digits[i]);
+            }
+            printf(COLOR_FRACTION);
+            for (short i = SINGLE_OFF_FRACTION_HIGH; i >= SINGLE_OFF_FRACTION_LOW; --i) {
+                printf("  %hhu", digits[i]);
+            }
+            printf(COLOR_NONE"\n"COLOR_SIGN"sign"COLOR_NONE"       "COLOR_EXPONENT"exponent"COLOR_NONE"                                      "COLOR_FRACTION"fraction"COLOR_NONE"\n");
         }
         if (format & FloatingFormatDouble) {
-            printf("%s as double-precision:\n", argv[i]);
+            printf(TEXT_SEPERATOR"\n%s as double-precision: ", argv[i]);
             union {
                 double number;
                 uint64_t bytes;
@@ -74,20 +128,43 @@ int main(int argc, char *argv[]) {
             char *end;
             overlap.number = strtod(argv[i], &end);
             if (overlap.number == 0.0 && end == argv[i]) {
-                puts("------ BAD INPUT ------");
+                puts("BAD INPUT");
                 continue;
             }
-            puts("\033[34m 63\033[32m 62 61 60 59 58 57 56 55 54 53 52\033[31m 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0\033[0m");
-            printf("  %hhu", (uint8_t)(overlap.bytes >> 63) & 0b1);
-            for (short i = 62; i >= 52; --i) {
-                printf("  %hhu", (uint8_t)(overlap.bytes >> i) & 0b1);
+            char digits[64];
+            for (short i = 0; i < 64; ++i) {
+                digits[i] = (uint8_t)(overlap.bytes >> i) & 0b1;
             }
-            for (short i = 51; i >= 0; --i) {
-                printf("  %hhu", (uint8_t)(overlap.bytes >> i) & 0b1);
+            char buffer[DBL_DIG + 3];
+            bool exact = false;
+            int len = sprintf(buffer, "%.*lf", DBL_DIG, overlap.number);
+            if (len > 0 && len <= DBL_DIG + 2) {
+                float new = strtod(argv[i], &end);
+                if (!(new == 0.0 && end == buffer)) {
+                    exact = new == overlap.number;
+                }
             }
-            printf(" \n");
+            printf("%.*lf (%s) / %a / "COLOR_SIGN"%c"COLOR_NONE"1."COLOR_FRACTION"", DBL_DIG, overlap.number, exact ? "exact" : "non-exact", overlap.number, digits[DOUBLE_OFF_SIGN] ? '-' : '+');
+            for (short i = DOUBLE_OFF_FRACTION_HIGH; i >= DOUBLE_OFF_FRACTION_LOW; --i) {
+                printf("%hhu", digits[i]);
+            }
+            printf(COLOR_NONE"e("COLOR_EXPONENT);
+            for (short i = DOUBLE_OFF_EXPONENT_HIGH; i >= DOUBLE_OFF_EXPONENT_LOW; --i) {
+                printf("%hhu", digits[i]);
+            }
+            uint16_t e = (overlap.bytes >> (DOUBLE_OFF_FRACTION_HIGH + 1)) & 0x7ff;
+            printf(COLOR_NONE"-1111111111)_2, "COLOR_EXPONENT"E=%hu"COLOR_NONE", "COLOR_EXPONENT"exp=%hd"COLOR_NONE"\n "TEXT_63_TO_0"\n"COLOR_SIGN"  %hu"COLOR_EXPONENT"", e, (int16_t)(e - 1023), digits[DOUBLE_OFF_SIGN]);
+            for (short i = DOUBLE_OFF_EXPONENT_HIGH; i >= DOUBLE_OFF_EXPONENT_LOW; --i) {
+                printf("  %hhu", digits[i]);
+            }
+            printf(COLOR_FRACTION);
+            for (short i = DOUBLE_OFF_FRACTION_HIGH; i >= DOUBLE_OFF_FRACTION_LOW; --i) {
+                printf("  %hhu", digits[i]);
+            }
+            printf(COLOR_NONE"\n"COLOR_SIGN"sign"COLOR_NONE"            "COLOR_EXPONENT"exponent"COLOR_NONE"                                                                                      "COLOR_FRACTION"fraction"COLOR_NONE"\n");
         }
     }
+    puts(TEXT_SEPERATOR);
 
     return 0;
 }
